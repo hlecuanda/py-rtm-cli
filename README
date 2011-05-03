@@ -1,0 +1,18 @@
+========================================
+RTM CLI
+Remember the Milk Command Line Interface
+========================================
+
+Copyright © 2011 by David Waring
+dave@davidwaring.net
+http://www.davidwaring.net/
+
+Contributors:
+
+Dependencies:
+Python http://www.python.org/
+pyrtm  http://bitbucket.org/srid/pyrtm/
+
+Home Page:
+http://www.davidwaring.net/projects/rtm.html
+http://bitbucket.org/dwaring87/rtm-cli/
