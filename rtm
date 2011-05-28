@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-VERSION = "1.1.1"
+VERSION = "1.1.2"
 
 # LICENSE
 # ======================================================================
@@ -2419,12 +2419,14 @@ def getNotes(index):
         try:
 			for note in notes.note:
 				 print note.title
-				 print "<Note Body>"
+				 body = getattr(note, "$t")
+				 print body
 				 print "----------------------------------------------------"
         except TypeError:
             note = notes.note
             print note.title
-            print "<Note Body>"
+            body = getattr(note, "$t")
+            print body
             print "----------------------------------------------------"
 
 # END getNotes()    
