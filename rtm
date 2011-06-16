@@ -34,6 +34,7 @@ VERSION = "1.1.4"
 
 # TODO:
 # Improve suport for repeating tasks
+#     - possibly display the last two most recent occurences of the recurring task
 # add filter / smart lists to create list
 # add ability to add/delete notes
 # add estimate support
