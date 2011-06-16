@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-VERSION = "1.1.3"
+VERSION = "1.1.4"
 
 # LICENSE
 # ======================================================================
@@ -33,7 +33,7 @@ VERSION = "1.1.3"
 
 
 # TODO:
-# Add suport for repeating tasks
+# Improve suport for repeating tasks
 # add filter / smart lists to create list
 # add ability to add/delete notes
 # add estimate support
@@ -369,9 +369,9 @@ def genLookupTable():
 
             		# when there are multiple tasks in a taskseries (recurring tasks)...
             		if isinstance(series.task, list):
-            			idx = len(series.task) - 1
-            			lookup_table[n] = series.task[idx].id
-            			n=n+1
+            			for idx in range(0, len(series.task)):
+            			    lookup_table[n] = series.task[idx].id
+            			    n=n+1
             		
             		# when there is only 1 task in a taskseries...
             		else:
@@ -386,9 +386,9 @@ def genLookupTable():
             	
             	# when there are multiple tasks in a taskseries (recurring tasks)...
             	if isinstance(series.task, list):
-            		idx = len(series.task) - 1
-            		lookup_table[n] = series.task[idx].id
-            		n=n+1
+            		for idx in range(0, len(series.task)):
+            		    lookup_table[n] = series.task[idx].id
+            		    n=n+1
             		
             	# when there is only 1 task in a taskseries...
             	else:
@@ -533,9 +533,9 @@ def getTasks(filterString=""):
 						
 						# TASK PROPERTIES
 						
-						# if there is more than one task in the taskseries...
+						# if there is more than one task in the taskseries (recurring tasks)...
 						if isinstance(task, list):
-							idx = len(task) - 1
+							idx = 0
 							task_id = task[idx].id
 							task_pri = task[idx].priority
 							task_due = task[idx].due
@@ -547,7 +547,7 @@ def getTasks(filterString=""):
 							task_pri = task.priority
 							task_due = task.due
 							task_comp = task.completed
-
+						
 						
 						# LIST PROPERTIES
 						
@@ -557,7 +557,6 @@ def getTasks(filterString=""):
 						
 						# Add task properties to the nested list
 						tasks.append([taskseries_id, task_id, task_name, task_pri, task_due, list_name, list_id, task_comp, tags, notes_num])
-				
 				
 				
 				
@@ -591,9 +590,9 @@ def getTasks(filterString=""):
 					
 					# TASK PROPERTIES
 					
-					# if there is more than one task in the taskseries...
+					# if there is more than one task in the taskseries (recurring tasks)...
 					if isinstance(task, list):
-						idx = len(task) - 1
+						idx = 0
 						task_id = task[idx].id
 						task_pri = task[idx].priority
 						task_due = task[idx].due
@@ -680,7 +679,7 @@ def ls(filterString=""):
     # sort tasks by task list, then completed, priority, due date, and task name
     global tasks
     tasks = sorted(tasks, key=itemgetter(5,7,3,4,2))
-     
+    
     # initial list heading
     current_list_name = ""
         
@@ -693,8 +692,15 @@ def ls(filterString=""):
             print ""            
             print "  " + current_list_name + ":"
         
-        # print task index value
-        print "%02d" % getLookupTable(id=tasks[i][1]),
+        # print task index value, padded with zeros (depending on # of tasks)
+        if len(tasks) < 100:
+            print "%02d" % getLookupTable(id=tasks[i][1]),
+        elif len(tasks) < 1000:
+            print "%03d" % getLookupTable(id=tasks[i][1]),
+        elif len(tasks) < 10000:
+            print "%04d" % getLookupTable(id=tasks[i][1]),
+        else:
+            print "%02d" % getLookupTable(id=tasks[i][1]),
         
         # if task is completed...
         if tasks[i][7] != "":
@@ -822,8 +828,15 @@ def lsp(filterString=""):
     # parse through each task
     for i in range(len(tasks)):
     
-        # print task index value
-        print "%02d" % getLookupTable(id=tasks[i][1]),
+        # print task index value, padded with zeros (depending on # of tasks)
+        if len(tasks) < 100:
+            print "%02d" % getLookupTable(id=tasks[i][1]),
+        elif len(tasks) < 1000:
+            print "%03d" % getLookupTable(id=tasks[i][1]),
+        elif len(tasks) < 10000:
+            print "%04d" % getLookupTable(id=tasks[i][1]),
+        else:
+            print "%02d" % getLookupTable(id=tasks[i][1]),
     
         # for completed tasks...
         if tasks[i][7] != "":
@@ -972,8 +985,16 @@ def lsd(filterString=""):
                 print ""
                 print COLOR_DUE + '   ' + weekdays[date.weekday()] + " " + str(date)[5:10] + COLOR_RESET
         
-        # print task index value
-        sys.stdout.write("%02d" % getLookupTable(id=tasks[i][1]))
+        
+        # print task index value, padded with zeros (depending on # of tasks)
+        if len(tasks) < 100:
+            print "%02d" % getLookupTable(id=tasks[i][1]),
+        elif len(tasks) < 1000:
+            print "%03d" % getLookupTable(id=tasks[i][1]),
+        elif len(tasks) < 10000:
+            print "%04d" % getLookupTable(id=tasks[i][1]),
+        else:
+            print "%02d" % getLookupTable(id=tasks[i][1]),
         
         
         # if task is completed...

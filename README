@@ -7,10 +7,6 @@ Copyright © 2011 by David Waring
 dave@davidwaring.net
 http://www.davidwaring.net/
 
-Files:
-rtm         The main script -- use this unless you encounter errors
-rtm.debug   A Debug version of the script to try to fix Issue #1: 'list' object has no attribute 'id'
-
 Contributors:
 
 Dependencies:
