@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-VERSION = "1.1.4"
+VERSION = "1.2.0"
 
 # LICENSE
 # ======================================================================
@@ -36,7 +36,6 @@ VERSION = "1.1.4"
 # Improve suport for repeating tasks
 #     - possibly display the last two most recent occurences of the recurring task
 # add filter / smart lists to create list
-# add ability to add/delete notes
 # add estimate support
 # add location support
 # incoporate Google Calendar?  --> Usung Google's CLI
@@ -99,6 +98,7 @@ api_secret = "131beea786379309"                 # The RTM API Shared Secret
 lookup_table = {}                               # An index of all tasks based on their id
 lists = {}                                      # An index of list names based on their id
 tasks = []                                      # A nested list of tasks containing their properties
+PLANNER_LENGTH = 20                             # The max length of task names displayed by the weekly planner
 MODE = ""                                       # The mode the script is currently running as
 weekdays = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
 
@@ -2477,6 +2477,211 @@ def mdelTags():
 
 
 # ========================================================================================================= #
+# addNote <task index> <note title> <note body>                                                             #
+#    Adds a note to the given task with the specified title and body                                        #
+# ========================================================================================================= #
+def addNote(index, title, body):
+    
+    # login to RTM and authenticate the user
+    if MODE != "interactive":
+        login()
+    
+    print "adding note to task # " + index + "..."
+    
+    # get a timeline id
+    timeline = getTimeline()
+    
+    # get the task id, taskseries id and list id
+    (task_id, taskseries_id, list_id) = getTask(index)
+    
+    # add the new tags
+    rsp = my_rtm.tasksNotes.add(timeline=timeline, list_id=list_id, taskseries_id=taskseries_id, task_id=task_id, note_title=title, note_text=body)
+    
+    # write the transaction ID if it is undoable
+    if rsp.transaction.undoable == "1":
+        writeTransID(rsp.transaction.id)
+    else:
+        writeTransID("NA")
+
+# END addNote()    
+# ========================================================================================================= #    
+
+
+
+# ========================================================================================================= #
+# maddNote                                                                                                  #
+#    Have the user enter multiple new notes before submitting them to RTM.  Enter a blank line to end the   #
+#    prompt.                                                                                                #
+# ========================================================================================================= #
+def maddNote():
+    
+    # Give instructions
+    print "Enter each task # followed by the note title and then the note body at the prompts below."
+    print "Enter a blank line when finished."
+    print ""
+    
+    # The task stack
+    list_args=[]
+    stack=[]
+    done=0
+    
+    # prompt user for note titles and bodies
+    while done == 0:
+        task_index = raw_input("Task #: ")
+        
+        # catch a blank line to signal the end of input
+        if task_index == "":
+            done = 1
+        
+        # append arguments to the list
+        else:
+            title = raw_input("Title: ")
+            body = raw_input("Body: ")
+            
+            list_args.append(task_index)
+            list_args.append(title)
+            list_args.append(body)
+
+	
+    # login to RTM and authenticate the user
+    if MODE != "interactive":
+        login()
+
+    print ""
+    print "submitting new notes to RTM..."
+    
+    # get a timeline id
+    timeline = getTimeline()
+    
+    # get task properties before submitting changes, 
+    # since the task index numbers may change after something is submitted to RTM
+    while len(list_args) != 0:
+        
+        # get the each body, title and task index from the list
+        note_body = list_args.pop()
+        note_title = list_args.pop()
+        task_index = list_args.pop()
+    
+        # get the task id, taskseries id and list id
+        (task_id, taskseries_id, list_id) = getTask(task_index)
+        
+        # save all properties to the stack
+        stack.append((task_id, taskseries_id, list_id, task_index, note_title, note_body))
+
+    # signal the start of a multi function
+    writeTransID("startMulti")
+
+    # now, submit the changes to RTM
+    while len(stack) != 0:
+        # get the current tasks's saved properties
+        props = stack.pop()
+                
+        print "adding note to task #" + props[3] + "..."
+    
+        # add new tags
+        rsp = my_rtm.tasksNotes.add(timeline=timeline, list_id=props[2], taskseries_id=props[1], task_id=props[0], note_title=props[4], note_text=props[5])
+            
+        # write the transaction ID if it is undoable
+        if rsp.transaction.undoable == "1":
+            writeTransID(rsp.transaction.id, multi="true")
+        else:
+            writeTransID("NA", multi="true")
+
+# END maddNote()    
+# ========================================================================================================= #
+
+
+
+# ========================================================================================================= #
+# delNote <task index>                                                                                      #
+#    This method will display the title of the notes for the specified task, asking the user if it should   #
+#    be deleted.                                                                                            #
+# ========================================================================================================= #
+def delNote(index=""):
+    
+    if MODE != "interactive":
+        login()
+    
+    
+    if index == "":
+        index = raw_input("Task #: ")
+    
+    
+    print "Choose which notes to delete from the list below"
+    print ""
+    
+    # get the task properties
+    (task_id, taskseries_id, list_id) = getTask(index)
+    
+    # find the task
+    root = my_rtm.tasks.getList()
+    for lists in root.tasks.list:
+        if hasattr(lists, "taskseries"):
+            if isinstance(lists.taskseries, list):
+				for series in lists.taskseries:
+					if series.id == taskseries_id:
+						series_elem = series
+						notes = series_elem.notes
+            else:
+			    series = lists.taskseries
+			    if series.id == taskseries_id:
+				    series_elem = series
+				    notes = series_elem.notes
+
+    
+    if notes == []:
+        print "This task has no notes"
+        
+    # Have the user choose which notes to delete
+    else:
+        stack=[]
+        
+        # get a timeline id
+        timeline = getTimeline()
+        
+        # display the titles each note, prompt the user if it should be deleted
+        if isinstance(notes.note, list):
+			for note in notes.note:
+			    if ( note.title != "" ):
+			        print "Title: " + note.title
+			    else:
+			        print "Body: " + getattr(note, "$t")
+			    dn = raw_input("Delete this note (y/n)? ")
+			    if (dn == "y" or dn == "Y" or dn == "yes" or dn == "Yes" or dn == "YES"):
+			        stack.append(note.id)
+			    print ""
+				
+        else:
+            note = notes.note
+            
+            if ( note.title != "" ):
+                print "Title: " + note.title
+            else:
+			    print "Body: " + getattr(note, "$t")
+            dn = raw_input("Delete this note (y/n)?")
+            if (dn == "y" or dn == "Y" or dn == "yes" or dn == "Yes" or dn == "YES"):
+                stack.append(note.id)
+            print ""
+        
+        # loop through each note that was selected, and delete
+        for i in range(len(stack)):
+            print "Deleting note # " + stack[i] + "..."
+            
+            # delete the note
+            rsp = my_rtm.tasksNotes.delete(timeline=timeline, note_id=stack[i])
+            
+            # write the transaction ID if it is undoable
+            if rsp.transaction.undoable == "1":
+                writeTransID(rsp.transaction.id, multi="true")
+            else:
+                writeTransID("NA", multi="true")
+        
+# END delNote()    
+# ========================================================================================================= #
+
+
+
+# ========================================================================================================= #
 # getNotes <task index>                                                                                     #
 #    This method will display the notes, if any, for the specified task                                     #
 # ========================================================================================================= #
@@ -2510,12 +2715,20 @@ def getNotes(index):
         print "----------------------------------------------------"
         if isinstance(notes.note, list):
 			for note in notes.note:
-				 print note.title
-				 body = getattr(note, "$t")
-				 print body
-				 print "----------------------------------------------------"
+			    space_len = (52-len(note.title))/2
+			    for i in range(space_len):
+			        sys.stdout.write(" ")
+			    print note.title
+			    body = getattr(note, "$t")
+			    print body
+			    print "----------------------------------------------------"
+				
         else:
             note = notes.note
+            
+            space_len = (52-len(note.title))/2
+            for i in range(space_len):
+                sys.stdout.write(" ")
             print note.title
             body = getattr(note, "$t")
             print body
@@ -2633,7 +2846,7 @@ def undo():
 # ========================================================================================================= #
 def planner(start="mon", filterString=""):
     # max substring length
-    substring_length = 20
+    substring_length = PLANNER_LENGTH
 
     # login to RTM and authenticate the user
     if MODE != "interactive":
@@ -3115,10 +3328,10 @@ def help():
     print "         see http://www.rememberthemilk.com/ for more information."
     print ""
     print "DESCRIPTION"
-    print " This program gives full command line access to a user's rtm tasks and "
-    print " can view, add and modify tasks.  The program utilizes the pyrtm Remember"
-    print " The Milk API interface for python.  Visit <https://bitbucket.org/srid/pyrtm/>"
-    print " for more information about the API interface."
+    print "  This program gives full command line access to a user's rtm tasks and "
+    print "  can view, add and modify tasks.  The program utilizes the pyrtm Remember"
+    print "  The Milk API interface for python.  Visit <https://bitbucket.org/srid/pyrtm/>"
+    print "  for more information about the API interface."
     print ""
     version()
     print ""
@@ -3181,6 +3394,8 @@ def usage():
     print "      a [task]              task name due date p:priority l:list name t:tag"
     print "    addList [name]      : add a new list to RTM using the specified name"
     print "      al [name]"
+    print "    addNote [index] [title] [body] : add a note to the specified task"
+    print "      an [index] [title] [body]"
     print "    addTags [index] [tags] : add the given tags to the specified task"
     print "      at [index] [tags]"
     print "    comp [index]        : mark the task specified by its index number as complete"
@@ -3190,6 +3405,8 @@ def usage():
     print "      rm [index]"
     print "    delList [name]      : delete the list specified by its name"
     print "      dl [name]             (moves remaining tasks to the Inbox)"
+    print "    delNote [index]     : delete a note from the specified task"
+    print "      dn [index]"
     print "    delTags [index] [tags] : delete the given tags from the specified task"
     print "      dt [index] [tags]"
     print "    due [index] [date]  : set the due date of the task specified by its index number"
@@ -3313,7 +3530,13 @@ def main(argv, mode=""):
         if len(args) == 1:
             maddTags()
         else:
-            addTags(args[1], ",".join(args[2:]))        
+            addTags(args[1], ",".join(args[2:]))
+    
+    elif command in ("addNote", "addnote", "an", "aN"):
+        if len(args) == 1:
+            maddNote()
+        else:
+            addNote(args[1], args[2], " ".join(args[3:]))
 
     elif command in ("complete", "comp", "com", "c", "fin", "f"):
         if len(args) == 2:
@@ -3339,6 +3562,12 @@ def main(argv, mode=""):
         else:
             delTags(args[1], ",".join(args[2:]))
     
+    elif command in ("delNote", "delnote", "dn", "dN", "deletenote", "deleteNote"):
+        if len(args) == 1:
+            delNote()
+        if len(args) == 2:
+            delNote(args[1])
+            
     elif command in ("exit"):
         sys.exit(0)
             
@@ -3431,7 +3660,8 @@ def main(argv, mode=""):
         
     elif command == "":
         usage()
-        sys.exit(2)
+        if MODE != "interactive":
+            sys.exit(2)
         
     elif command == "help":
         help()
