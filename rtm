@@ -1,6 +1,6 @@
-#! /usr/bin/env python
+#! /usr/bin/python
 
-VERSION = "1.2.0"
+VERSION = "1.2.2"
 
 # LICENSE
 # ======================================================================
@@ -83,11 +83,12 @@ import getopt
 from datetime import datetime
 from datetime import date
 from datetime import timedelta
+from datetime import tzinfo
 from operator import itemgetter
 import string
 import urllib2
 import webbrowser
-
+import readline
 
 
 # VARIABLES:
@@ -102,7 +103,67 @@ PLANNER_LENGTH = 20                             # The max length of task names d
 MODE = ""                                       # The mode the script is currently running as
 weekdays = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
 
+# TIMEZONE CLASSES:
+# Dealing with timezone differences between RTM (UTC) and local machine
+# Code from example under http://docs.python.org/library/datetime.html#tzinfo-objects
 
+ZERO = timedelta(0)
+HOUR = timedelta(hours=1)
+
+# A UTC class.
+
+class UTC(tzinfo):
+    """UTC"""
+
+    def utcoffset(self, dt):
+        return ZERO
+
+    def tzname(self, dt):
+        return "UTC"
+
+    def dst(self, dt):
+        return ZERO
+
+utc = UTC()
+
+# A class capturing the platform's idea of local time.
+
+import time as _time
+
+STDOFFSET = timedelta(seconds = -_time.timezone)
+if _time.daylight:
+    DSTOFFSET = timedelta(seconds = -_time.altzone)
+else:
+    DSTOFFSET = STDOFFSET
+
+DSTDIFF = DSTOFFSET - STDOFFSET
+
+class LocalTimezone(tzinfo):
+
+    def utcoffset(self, dt):
+        if self._isdst(dt):
+            return DSTOFFSET
+        else:
+            return STDOFFSET
+
+    def dst(self, dt):
+        if self._isdst(dt):
+            return DSTDIFF
+        else:
+            return ZERO
+
+    def tzname(self, dt):
+        return _time.tzname[self._isdst(dt)]
+
+    def _isdst(self, dt):
+        tt = (dt.year, dt.month, dt.day,
+              dt.hour, dt.minute, dt.second,
+              dt.weekday(), 0, 0)
+        stamp = _time.mktime(tt)
+        tt = _time.localtime(stamp)
+        return tt.tm_isdst > 0
+
+Local = LocalTimezone()
 
 
 
@@ -723,7 +784,7 @@ def ls(filterString=""):
             date = str(tasks[i][7])
                 
             # convert the date into a datetime object
-            date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
+            date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=utc).astimezone(Local)
             
             # print the completed date
             print "x " + weekdays[date.weekday()] + " " + str(date)[5:10]
@@ -784,7 +845,7 @@ def ls(filterString=""):
                 date = str(tasks[i][4])
                 
                 # convert the date into a datetime object
-                date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
+                date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=utc).astimezone(Local)
         
                 # for plain output...
                 if PLAIN == 1:
@@ -859,7 +920,7 @@ def lsp(filterString=""):
             date = str(tasks[i][7])
                 
             # convert the date into a datetime object
-            date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
+            date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=utc).astimezone(Local)
         
             # print the completed date
             print "x " + weekdays[date.weekday()] + " " + str(date)[5:10]
@@ -919,7 +980,7 @@ def lsp(filterString=""):
                 date = str(tasks[i][4])
                 
                 # convert the date into a datetime object
-                date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
+                date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=utc).astimezone(Local)
         
                 # for plain output...
                 if PLAIN == 1:
@@ -974,7 +1035,7 @@ def lsd(filterString=""):
             date = str(tasks[i][4])
                 
             # convert the date into a datetime object
-            date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
+            date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=utc).astimezone(Local)
         
             # for plain output...
             if PLAIN == 1:
@@ -1017,7 +1078,7 @@ def lsd(filterString=""):
             date = str(tasks[i][7])
                 
             # convert the date into a datetime object
-            date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
+            date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=utc).astimezone(Local)
             
             # print the completed date
             print " x " + weekdays[date.weekday()] + " " + str(date)[5:10]
@@ -2914,7 +2975,7 @@ def planner(start="mon", filterString=""):
         # for tasks with due dates
         else:
             # convert the date into a datetime object
-            temp_date_obj = datetime.strptime(temp_date_obj, "%Y-%m-%dT%H:%M:%SZ")
+            temp_date_obj = datetime.strptime(temp_date_obj, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=utc).astimezone(Local)
         
             # check the date against each day of the week
             # if it matches, append the task's pri, list, name, completed date, length of task name
