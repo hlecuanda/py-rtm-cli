@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-VERSION = "1.3.0"
+VERSION = "1.3.1"
 
 # LICENSE
 # ======================================================================
@@ -340,7 +340,7 @@ def getTimeline():
         
         # write it to disk
         f = open(full_path, "w")
-        print >>f, timeline
+        f.write(timeline)
         f.close()
         
         # return the newly minted timeline id
@@ -941,7 +941,7 @@ def lsp(filterString=""):
             # print the tags, if any
             if (len(tasks[i][8]) != 0) and (DISP_TAGS == 1):
                 for j in range(len(tasks[i][8])):
-                    display("#" + tasks[i][8][j] + " ", 0)
+                    display(" #" + tasks[i][8][j], 0)
 
             # get the completed date as a string
             date = str(tasks[i][7])
