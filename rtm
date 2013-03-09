@@ -4266,7 +4266,8 @@ def usage():
     display("                               NOTE: this will print a very wide display and task names will")
     display("                                  be cut at 20 characters.")
     display("    today               : display prioritized tasks and tasks completed today")
-
+    display("    overdue             : display all tasks that are overdue")
+    
 # END usage()
 # ========================================================================================================= #    
 
@@ -4569,6 +4570,9 @@ def main(argv, mode=""):
     elif command == "today":
         lsp(filterString="(not priority:none and status:incomplete) or completed:today or (due:today and status:incomplete)")
         
+    elif command == "overdue":
+        lsp(filterString="(dueBefore:now and status:incomplete)")
+    
     elif command == "":
         usage()
         if MODE != "interactive":
