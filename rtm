@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-VERSION = "1.3.1"
+VERSION = "1.3.2"
 
 # LICENSE
 # ======================================================================
@@ -1183,7 +1183,7 @@ def add(task):
         login()
     
     # replace 'p:' with '!' for the priority
-    task = task.replace("p:","!")
+    task = re.sub(r'(p:)([0-3])', r'!\2', task)
         
     # replace 'l:' with '#" for the list
     task = task.replace("l:","#") 
@@ -1236,7 +1236,7 @@ def madd():
         # otherwise parse and append the new task to the stack
         else:
             # replace 'p:' with '!' for the priority and 'l:' with '#' for the list
-            new_task = new_task.replace("p:","!")    
+            new_task = re.sub(r'(p:)([0-3])', r'!\2', new_task)   
             new_task = new_task.replace("l:","#") 
             new_task = new_task.replace("t:","#") 
             
