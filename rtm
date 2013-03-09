@@ -564,6 +564,7 @@ def getList(id="", name=""):
 #        - Complete Date    = task_comp          [*][7]                                                     #
 #        - Tags             = tags[]             [*][8][#]                                                  #
 #        - Number of Notes  = notes_num          [*][9]                                                     #
+#        - Task URL         = task_url           [*][10]                                                    #
 #    GLOBAL tasks[]: a nested list of all tasks and their properties                                        #
 # ========================================================================================================= #
 def getTasks(filterString=""):
@@ -594,6 +595,7 @@ def getTasks(filterString=""):
                         
                         taskseries_id = series.id
                         task_name = series.name
+                        task_url = series.url
                         
                         if series.tags == []:
                             tags = []
@@ -634,11 +636,10 @@ def getTasks(filterString=""):
                         # LIST PROPERTIES
                         
                         list_id = lists.id
-                        list_name = getList(id=list_id)
-                        
+                        list_name = getList(id=list_id)                       
                         
                         # Add task properties to the nested list
-                        tasks.append([taskseries_id, task_id, task_name, task_pri, task_due, list_name, list_id, task_comp, tags, notes_num])
+                        tasks.append([taskseries_id, task_id, task_name, task_pri, task_due, list_name, list_id, task_comp, tags, notes_num, task_url])
                 
                 
                 
@@ -652,6 +653,7 @@ def getTasks(filterString=""):
                         
                     taskseries_id = series.id
                     task_name = series.name
+                    task_url = series.url
                     
                     if series.tags == []:
                         tags = []
@@ -693,9 +695,8 @@ def getTasks(filterString=""):
                     list_id = lists.id
                     list_name = getList(id=list_id)
                     
-                    
                     # Add task properties to the nested list
-                    tasks.append([taskseries_id, task_id, task_name, task_pri, task_due, list_name, list_id, task_comp, tags, notes_num])
+                    tasks.append([taskseries_id, task_id, task_name, task_pri, task_due, list_name, list_id, task_comp, tags, notes_num, task_url])
             
             
             # When there are no taskseries in the current list...    
@@ -767,7 +768,7 @@ def ls(filterString=""):
         
     # cycle through each task item
     for i in range(len(tasks)):
-    
+        
         # if the task item is in a new list...print the new list name
         if tasks[i][5] != current_list_name:
             current_list_name = tasks[i][5]
@@ -793,6 +794,10 @@ def ls(filterString=""):
         
             # print an 'x' instead of priority
             display(" x  " + tasks[i][2], 0)
+            
+            # print task url, if any
+            if tasks[i][10]:
+                display(" [" + tasks[i][10] + "]", 0)
             
             # print any notes indicators, if requested
             if DISP_NOTES == 1:
@@ -821,7 +826,11 @@ def ls(filterString=""):
                 
                 # for plain output..
                 if PLAIN == 1:
-                   display("(" + tasks[i][3] + ") " + tasks[i][2], 0)
+                    display("(" + tasks[i][3] + ") " + tasks[i][2], 0)
+                   
+                    # print url, if any
+                    if tasks[i][10]:
+                        display(" [" + tasks[i][10] + "]", 0)
                 
                 # for colored output...
                 else:
@@ -831,10 +840,18 @@ def ls(filterString=""):
                         display(COLOR_PRI2 + '(' + tasks[i][3] + ') ' + tasks[i][2], 0)
                     elif tasks[i][3] == "3":
                         display(COLOR_PRI3 + '(' + tasks[i][3] + ') ' + tasks[i][2], 0)
+                        
+                    # print url, if any
+                    if tasks[i][10]:
+                        display(" [" + tasks[i][10] + "]", 0)
             
             # indent non-prioritized tasks further
             else:
                 display("    " + tasks[i][2], 0)
+                
+                # print task url, if any
+                if tasks[i][10]:
+                    display(" [" + tasks[i][10] + "]", 0)
             
             
             # print notes indicator, if requested
@@ -933,6 +950,10 @@ def lsp(filterString=""):
             # print an "x" instead of priority and then the task list and name
             display(" x  " + tasks[i][5] + ": " + tasks[i][2], 0)
             
+            # print task url, if any
+            if tasks[i][10]:
+                display(" [" + tasks[i][10] + "]", 0)
+            
             # print notes indicator, if requested
             if DISP_NOTES == 1:
                 for j in range(tasks[i][9]):
@@ -961,7 +982,11 @@ def lsp(filterString=""):
                     
                 # for plain output..
                 if PLAIN == 1:
-                   display("(" + tasks[i][3] + ") " + tasks[i][5] + ": " + tasks[i][2], 0)
+                    display("(" + tasks[i][3] + ") " + tasks[i][5] + ": " + tasks[i][2], 0)
+                   
+                    # print task url, if any
+                    if tasks[i][10]:
+                        display(" [" + tasks[i][10] + "]", 0)
                     
                 # for colored output...
                 else:
@@ -971,11 +996,19 @@ def lsp(filterString=""):
                         display(COLOR_PRI2 + "(" + tasks[i][3] + ") " + COLOR_LIST + tasks[i][5] + ":" + COLOR_PRI2 + " " + tasks[i][2], 0)
                     elif tasks[i][3] == "3":
                         display(COLOR_PRI3 + "(" + tasks[i][3] + ") " + COLOR_LIST + tasks[i][5] + ":" + COLOR_PRI3 + " " + tasks[i][2], 0)
+                        
+                    # print task url, if any
+                    if tasks[i][10]:
+                        display(" [" + tasks[i][10] + "]", 0)
             
             # when there is no priority, indent more and print the list and task
             else:
                 display("    " + COLOR_LIST + tasks[i][5] + ":" + COLOR_RESET + " " + tasks[i][2], 0)
-            
+                
+                # print task url, if any
+                if tasks[i][10]:
+                    display(" [" + tasks[i][10] + "]", 0)
+                
             # print the notes indicator, if requested
             if DISP_NOTES == 1:
                 for j in range(tasks[i][9]):
@@ -1093,6 +1126,10 @@ def lsd(filterString=""):
             # print an 'x' instead of priority and then the list name and task
             display("  x  " + tasks[i][5] + ": " + tasks[i][2], 0)
             
+            # print task url, if any
+            if tasks[i][10]:
+                display(" [" + tasks[i][10] + "]", 0)
+            
             # print the notes indicator, if requested
             if DISP_NOTES == 1:
                 for j in range(tasks[i][9]):
@@ -1137,7 +1174,11 @@ def lsd(filterString=""):
             # indent non-prioritized tasks further
             else:
                 display("     " + COLOR_LIST + tasks[i][5] + ":" + COLOR_RESET + " " + tasks[i][2], 0)
-             
+            
+            
+            # print task url, if any
+            if tasks[i][10]:
+                display(" [" + tasks[i][10] + "]", 0)
              
             # print the notes indicator, if requested
             if DISP_NOTES == 1:
