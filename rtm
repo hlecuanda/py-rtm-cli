@@ -251,6 +251,8 @@ def login():
         # Prompt and pause when we need to get a new token
         webbrowser.open(auth_url, True, True)
         display("This program requires access to your RTM account")
+        display("If a browser has not opened, use the following URL:")
+        display(auth_url)
         get_input("Press ENTER after you have authorized this program")
         
         # Get the authorized token
