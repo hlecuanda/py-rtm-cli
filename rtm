@@ -112,8 +112,8 @@ except ImportError:
 # VARIABLES:
 # IF YOU ARE PLANNING ON MAKING DRASTIC CHANGES OR USING THIS SCRIPT AS THE BASIS FOR ANOTHER PROGRAM,
 # PLEASE OBTAIN A NEW API KEY & SECRET FROM REMEMBER THE MILK
-api_key = "cbc76268b901ccb8d9fc5f3aebc4ee1f"    # The RTM API Key
-api_secret = "131beea786379309"                 # The RTM API Shared Secret
+api_key = "9cdd2b212a5ff0defbd2a7cdbf01c30c"    # The RTM API Key
+api_secret = "325abc5c6ff27b07"                 # The RTM API Shared Secret
 lookup_table = {}                               # An index of all tasks based on their id
 lists = {}                                      # An index of list names based on their id
 tasks = []                                      # A nested list of tasks containing their properties
@@ -3426,34 +3426,34 @@ def undo():
 # ========================================================================================================= #
 def planner(start="mon", filterString=""):
     col_buffer = 8
-    
+
     # max substring length
     # PLANNER_LENGTH = 20 # old value
     rows, columns = os.popen('stty size', 'r').read().split()
     substring_length = int(((int(columns)-8)/7)-col_buffer)
     substring_remainder = int(int(columns) - (((int(substring_length)+col_buffer)*7)+8))
-    
-    
-    
+
+
+
     # login to RTM and authenticate the user
     if MODE != "interactive":
         login()
-    
+
     # get the tasks
     getTasks(filterString=filterString)
-    
+
     # sort tasks by task due date, then completed, priority, and task name
     global tasks
     tasks = sorted(tasks, key=itemgetter(4,7,3,2))
-    
-    
+
+
     # SET UP DAYS OF WEEK
-    
+
     # Get today's date and day of week
     today_obj = date.today()
     weekday_int = date.weekday(today_obj)
     today = weekdays[weekday_int] + " " + str(today_obj)[5:10]
-    
+
     # Calculate the first day of this week (depending on what start day is specified)
     if start == "mon":
         first_day_obj = today_obj - timedelta(days = weekday_int)
