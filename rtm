@@ -101,12 +101,7 @@ from datetime import tzinfo
 from operator import itemgetter
 import string
 import webbrowser
-try:
-    from urllib.request import urlopen
-except ImportError:
-    from urllib import urlopen
-    from urllib import quote
-
+import requests
 
 
 # VARIABLES:
@@ -198,15 +193,10 @@ def login():
 
     # try to connect to the RTM API server
     try:
-        test = urlopen("http://api.rememberthemilk.com/services/rest/")
+        test = requests.get("https://api.rememberthemilk.com/services/rest/")
 
     # when no internet connection is available...
-    except URLError:
-        display("ERROR: Cannot connect to RTM server.")
-        sys.exit(1)
-
-    # if a redirect occurs...
-    if test.geturl() != "http://api.rememberthemilk.com/services/rest/":
+    except:
         display("ERROR: Cannot connect to RTM server.")
         sys.exit(1)
 
@@ -4156,7 +4146,7 @@ def interactive():
     MODE = "interactive"
     cmd = ""
     while (cmd != "exit"):
-        cmd = get_input('>> ')
+        cmd = get_input('rtm>> ')
         cmd = cmd.split(' ')
         main(cmd, mode="interactive")
         genLookupTable()
@@ -4176,7 +4166,7 @@ def help():
 
     display("NAME")
     display("  rtm -- a command line interface for the Remember the Milk task manager")
-    display("         see http://www.rememberthemilk.com/ for more information.")
+    display("         see https://www.rememberthemilk.com/ for more information.")
     display("")
     display("DESCRIPTION")
     display("  This program gives full command line access to a user's rtm tasks and ")
@@ -4189,7 +4179,7 @@ def help():
     display("RTM USER INFORMATION")
     display("  Username: " + username)
     display("")
-    usage()
+    usage(advanced=True)
 
 # END help()
 # ========================================================================================================= #
@@ -4225,91 +4215,90 @@ def version():
 # usage                                                                                                     #
 #     print the usage and define the options and commands                                                   #
 # ========================================================================================================= #
-def usage():
+def usage(interactive=False, advanced=True):
 
-    display("USAGE")
-    display("  rtm [options] ... [command] [command arguments]")
+    if not interactive:
+        display("USAGE")
+        display("  rtm [options] ... [command] [command arguments]")
+        display("")
+        display("  Options:")
+        display("    Note: To change the default display variables, edit the values in the beginning of this script")
+        display("")
+        display("    --comp, -c          : toggle the display of completed tasks - default " + str(DISP_COMP))
+        display("    --help, -h          : display the help and usage")
+        display("    --notes, -n         : toggle the display of notes indicators - default " + str(DISP_NOTES))
+        display("    --plain, -p         : set output to plain (no color) - default " + str(PLAIN))
+        display("    --readline, -r      : toggle readline support (disable to improve unicode support in interative mode) - default " + str(ENABLE_READLINE))
+        display("    --status, -s        : toggle the display of status messages - default " + str(DISP_STATUS))
+        display("    --tags, -t          : toggle the display of tags - default " + str(DISP_TAGS))
+        display("    --usage, -u         : display the usage")
+        display("    --version, -v       : display the author and version")
+        display("")
+        display("  Commands [arguments]:")
+        display("    - Leaving the command blank will start the interactive mode")
+        display("    - Generally, leaving the arguments blank will allow the user to enter")
+        display("      multiple arguments at a prompt (ie marking multiple tasks complete).")
+        display("")
+    display("Basic Commands:")
+    display("    add | a [task]            : add a task using the following format::")
+    display("                            task name due date p:priority l:list name t:tag")
+    display("    comp | c [index]          : mark the task specified by its index number as complete")
+    display("    delete | del | rm [index] : delete the task specified by its index number")
+    display("    due [index] [date]        : set the due date of the task specified by its index number")
+    display("    edit | e [index] [name]   : edit the name of the task specified by its index number")
+    display("    exit                      : exit interactive mode")
+    display("    help                      : display this help information")
+    display("    ls [filter]               : list all tasks sorted first by list then priority")
+    display("    postpone | pp [index]     : postpone the due date of the specified task by 1 day")
+    display("    pri | p [index] [pri]     : set the priority of task specified by its index number to <pri>,")
+    display("                            where <pri> can be priorities 1,2,3 or 0 to remove priority")
+    display("    overdue                   : display all tasks that are overdue")
+    display("    today                     : display prioritized tasks and tasks completed today")
+    display("    undo                      : undo the last function")
     display("")
-    display("  Options:")
-    display("    Note: To change the default display variables, edit the values in the beginning of this script")
-    display("")
-    display("    --comp, -c          : toggle the display of completed tasks - default " + str(DISP_COMP))
-    display("    --help, -h          : display the help and usage")
-    display("    --notes, -n         : toggle the display of notes indicators - default " + str(DISP_NOTES))
-    display("    --plain, -p         : set output to plain (no color) - default " + str(PLAIN))
-    display("    --readline, -r      : toggle readline support (disable to improve unicode support in interative mode) - default " + str(ENABLE_READLINE))
-    display("    --status, -s        : toggle the display of status messages - default " + str(DISP_STATUS))
-    display("    --tags, -t          : toggle the display of tags - default " + str(DISP_TAGS))
-    display("    --usage, -u         : display the usage")
-    display("    --version, -v       : display the author and version")
-    display("")
-    display("  Commands [arguments]:")
-    display("    - Only 1 command can be used at a time")
-    display("    - Leaving the command blank will start the interactive mode")
-    display("    - Generally, leaving the arguments blank will allow the user to enter")
-    display("      multiple arguments at a prompt (ie marking multiple tasks complete).")
-    display("")
-    display("    add [task]          : add a task using the following format::")
-    display("      a [task]              task name due date p:priority l:list name t:tag")
-    display("    addList [name]      : add a new list to RTM using the specified name")
-    display("      al [name]")
-    display("    addNote [index] [title] [body] : add a note to the specified task")
-    display("      an [index] [title] [body]")
-    display("    addTags [index] [tags] : add the given tags to the specified task")
-    display("      at [index] [tags]")
-    display("    comp [index]        : mark the task specified by its index number as complete")
-    display("      c [index]")
-    display("    delete [index]      : delete the task specified by its index number")
-    display("      del [index]")
-    display("      rm [index]")
-    display("    delList [name]      : delete the list specified by its name")
-    display("      dl [name]             (moves remaining tasks to the Inbox)")
-    display("    delNote [index]     : delete a note from the specified task")
-    display("      dn [index]")
-    display("    delTags [index] [tags] : delete the given tags from the specified task")
-    display("      dt [index] [tags]")
-    display("    due [index] [date]  : set the due date of the task specified by its index number")
-    display("    edit [index] [name] : edit the name of the task specified by its index number")
-    display("      e [index] [name]")
-    display("    editNote [index]    : edit one of the notes for the specified task")
-    display("      en [index]")
-    display("    exit                : exit interactive mode")
-    display("    help                : display this help information")
-    display("    logout              : remove login credentials used by RTM-CLI")
-    display("    ls [filter]         : list all tasks sorted first by list then priority")
-    display("    lsd [filter]        : list all tasks sorted first by due date then priority")
-    display("    lsp [filter]        : list all tasks sorted first by priority then list")
-    display("        [filter]        : filter options based on RTM's advanced search filters, ie::")
-    display("                            list:<task list>")
-    display("                            priority:<priority>")
-    display("                            tag:<tag>")
-    display("                            status:<completed | incomplete>")
-    display("                            due:<due date>")
-    display("    move [index] [list] : move the task specified by its index number to the specified list")
-    display("      mv [index] [list]")
-    display("      m [index] [list]")
-    display("    notes [index]       : display the notes for the task specified by its index number")
-    display("    open [page]         : open RTM <page> (home by default) in a web browser")
-    display("      o [page]              <page> = filters, help, home, planner, tasks, search, settings")
-    display("    postpone [index]    : postpone the due date of the specified task by 1 day")
-    display("      pp [index]")
-    display("    pri [index] [pri]   : set the priority of task specified by its index number to <pri>,")
-    display("      p [index] [pri]       where <pri> can be priorities 1,2,3 or 0 to remove priority")
-    display("    renameList [old name] [new name] : change the name of a list from <old name> to <new name>")
-    display("      mvList [old name] [new name]")
-    display("    uncomp [index]      : uncomplete the task specified by its index number")
-    display("      unc [index]           set the status of a previously completed task to incomplete")
-    display("      inc [index]")
-    display("    undo                : undo the last function")
-    display("")
-    display("  Meta-Commands:")
-    display("    clear [filter]      : delete all completed tasks (that match the optional filter)")
-    display("    planner [start] [filter] : print a weekly planner for tasks with due dates for this week")
-    display("      week [start] [filter]      <start> = mon (default), sun or today")
-    display("                               NOTE: this will print a very wide display and task names will")
-    display("                                  be cut at 20 characters.")
-    display("    today               : display prioritized tasks and tasks completed today")
-    display("    overdue             : display all tasks that are overdue")
+    if advanced:
+        display("Advanced Commands:")
+        display("    addList [name]      : add a new list to RTM using the specified name")
+        display("      al [name]")
+        display("    addNote [index] [title] [body] : add a note to the specified task")
+        display("      an [index] [title] [body]")
+        display("    addTags [index] [tags] : add the given tags to the specified task")
+        display("      at [index] [tags]")
+        display("    delList [name]      : delete the list specified by its name")
+        display("      dl [name]             (moves remaining tasks to the Inbox)")
+        display("    delNote [index]     : delete a note from the specified task")
+        display("      dn [index]")
+        display("    delTags [index] [tags] : delete the given tags from the specified task")
+        display("      dt [index] [tags]")
+        display("    editNote [index]    : edit one of the notes for the specified task")
+        display("      en [index]")
+        display("    logout              : remove login credentials used by RTM-CLI")
+        display("    lsd [filter]        : list all tasks sorted first by due date then priority")
+        display("    lsp [filter]        : list all tasks sorted first by priority then list")
+        display("        [filter]        : filter options based on RTM's advanced search filters, ie::")
+        display("                            list:<task list>")
+        display("                            priority:<priority>")
+        display("                            tag:<tag>")
+        display("                            status:<completed | incomplete>")
+        display("                            due:<due date>")
+        display("    move [index] [list] : move the task specified by its index number to the specified list")
+        display("      mv [index] [list]")
+        display("      m [index] [list]")
+        display("    notes [index]       : display the notes for the task specified by its index number")
+        display("    open [page]         : open RTM <page> (home by default) in a web browser")
+        display("      o [page]              <page> = filters, help, home, planner, tasks, search, settings")
+        display("    renameList [old name] [new name] : change the name of a list from <old name> to <new name>")
+        display("      mvList [old name] [new name]")
+        display("    uncomp [index]      : uncomplete the task specified by its index number")
+        display("      unc [index]           set the status of a previously completed task to incomplete")
+        display("      inc [index]")
+        display("")
+        display("  Meta-Commands:")
+        display("    clear [filter]      : delete all completed tasks (that match the optional filter)")
+        display("    planner [start] [filter] : print a weekly planner for tasks with due dates for this week")
+        display("      week [start] [filter]      <start> = mon (default), sun or today")
+        display("                               NOTE: this will print a very wide display and task names will")
+        display("                                  be cut at 20 characters.")
 
 # END usage()
 # ========================================================================================================= #
@@ -4325,6 +4314,9 @@ def get_input(prompt=">> "):
         res = raw_input(prompt)
     except NameError:
         res = input(prompt)
+    except EOFError:
+        display(" exiting...")
+        return "exit"
 
     return res
 # END get_input()
@@ -4437,6 +4429,11 @@ def main(argv, mode=""):
         interactive()
 
     command = args[0]
+
+    # we need to catch a blank string first before doing "command in (x,y,z)" comparisons
+    # because python lists are amazing
+    if command == "":
+        command = "noop"
 
     # Process commands (only one can be given at a time)
     if command == "ls":
@@ -4584,28 +4581,28 @@ def main(argv, mode=""):
         if len(args) == 2:
             if args[1] == "planner":
                 display("opening the RTM planner...")
-                webbrowser.open("http://www.rememberthemilk.com/printplanner/"+username, True, True)
+                webbrowser.open("https://www.rememberthemilk.com/printplanner/"+username, True, True)
             elif args[1] == "tasks":
                 display("opening the RTM tasks page...")
-                webbrowser.open("http://www.rememberthemilk.com/home/"+username+"/#section.tasks", True, True)
+                webbrowser.open("https://www.rememberthemilk.com/home/"+username+"/#section.tasks", True, True)
             elif args[1] == "settings":
                 display("opening the RTM settings page...")
-                webbrowser.open("http://www.rememberthemilk.com/home/"+username+"/#section.settings", True, True)
+                webbrowser.open("https://www.rememberthemilk.com/home/"+username+"/#section.settings", True, True)
             elif args[1] == "help":
                 display("opening the RTM help page...")
-                webbrowser.open("http://www.rememberthemilk.com/help/", True, True)
+                webbrowser.open("https://www.rememberthemilk.com/help/", True, True)
             elif args[1] == "search":
                 display("opening RTM advanced serach filters...")
-                webbrowser.open("http://www.rememberthemilk.com/help/answers/search/advanced.rtm", True, True)
+                webbrowser.open("https://www.rememberthemilk.com/help/answers/search/advanced.rtm", True, True)
             elif args[1] == "filters":
                 display("opening RTM advanced serach filters...")
-                webbrowser.open("http://www.rememberthemilk.com/help/answers/search/advanced.rtm", True, True)
+                webbrowser.open("https://www.rememberthemilk.com/help/answers/search/advanced.rtm", True, True)
             else:
                 display("opening RTM...")
-                webbrowser.open("http://www.rememberthemilk.com/home/"+username, True, True)
+                webbrowser.open("https://www.rememberthemilk.com/home/"+username, True, True)
         else:
             display("opening RTM...")
-            webbrowser.open("http://www.rememberthemilk.com/home/"+username, True, True)
+            webbrowser.open("https://www.rememberthemilk.com/home/"+username, True, True)
 
     elif command in ("clean", "clear"):
         clear(filterString=" ".join(args[1:]))
@@ -4616,16 +4613,17 @@ def main(argv, mode=""):
     elif command == "overdue":
         lsp(filterString="(dueBefore:now and status:incomplete)")
 
-    elif command == "":
-        usage()
-        if MODE != "interactive":
-            sys.exit(2)
+    elif command in ("help", "?"):
+        usage(interactive=True, advanced=False)
 
-    elif command == "help":
-        help()
+    elif command in ("fullhelp"):
+        usage(interactive=True, advanced=True)
 
     elif command == "rtm":
         main(args[1:])
+
+    elif command == "noop":
+        pass
 
     else:
         display("ERROR: command " + command + " not recognized")
